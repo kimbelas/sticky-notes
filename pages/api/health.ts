@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Check database connection
     const dbStatus = mongoose.connections[0].readyState;
-    const dbStatusMap = {
+    const dbStatusMap: Record<number, string> = {
       0: 'disconnected',
       1: 'connected',
       2: 'connecting',
