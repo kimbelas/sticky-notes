@@ -40,7 +40,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Run npm audit
         run: |
@@ -73,7 +73,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Run security linting
         run: npm run lint:security
@@ -121,7 +121,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Build for CodeQL
         run: npm run build
@@ -187,7 +187,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Install security scanning tools
         run: |
@@ -220,6 +220,7 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
       
       - name: Generate security summary
         run: |
@@ -241,6 +242,9 @@ jobs:
             jq -r '.vulnerabilities | length' security-audit-results/audit-results.json > /dev/null 2>&1 && \
             echo "Found $(jq -r '.vulnerabilities | length' security-audit-results/audit-results.json) vulnerabilities" >> security-summary.md || \
             echo "No vulnerabilities detected" >> security-summary.md
+          else
+            echo "## Dependency Vulnerabilities" >> security-summary.md
+            echo "Audit results not available" >> security-summary.md
           fi
           
           cat security-summary.md

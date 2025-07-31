@@ -22,7 +22,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Run ESLint
         run: npm run lint
@@ -50,7 +50,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Run TypeScript compiler
         run: npx tsc --noEmit
@@ -74,7 +74,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Run tests with coverage
         run: npm run test:coverage
@@ -104,7 +104,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Build application
         run: npm run build
@@ -134,7 +134,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Run security linting
         run: npm run lint:security
@@ -162,7 +162,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Start MongoDB (for integration tests)
         uses: supercharge/mongodb-github-action@1.10.0
