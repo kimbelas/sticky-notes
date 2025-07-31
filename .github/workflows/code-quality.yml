@@ -1,0 +1,353 @@
+name: Code Quality & Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  
+  # Run weekly quality reports
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 8 AM UTC
+  
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for SonarCloud
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting with detailed output
+        run: |
+          npm run lint -- --format json --output-file eslint-report.json || true
+          npm run lint -- --format unix || true
+      
+      - name: Run tests with coverage
+        run: npm run test:coverage
+      
+      - name: Generate code complexity report
+        run: |
+          npx plato -r -d complexity-report \
+            --exclude "**/node_modules/**,**/__tests__/**,**/coverage/**" \
+            --jshint .jshintrc \
+            --eslint .eslintrc.js \
+            . || echo "Plato analysis completed with warnings"
+      
+      - name: Calculate code metrics
+        run: |
+          echo "# Code Quality Metrics" > quality-report.md
+          echo "Generated: $(date)" >> quality-report.md
+          echo "" >> quality-report.md
+          
+          # Lines of code
+          echo "## Lines of Code" >> quality-report.md
+          echo "| Type | Count |" >> quality-report.md
+          echo "|------|-------|" >> quality-report.md
+          echo "| Total | $(find . -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' | grep -v node_modules | grep -v .next | xargs wc -l | tail -1 | awk '{print $1}') |" >> quality-report.md
+          echo "| Source | $(find ./pages ./components ./src ./lib ./models -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 'N/A') |" >> quality-report.md
+          echo "| Tests | $(find ./__tests__ -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 'N/A') |" >> quality-report.md
+          echo "" >> quality-report.md
+          
+          # Test coverage
+          if [ -f "coverage/coverage-summary.json" ]; then
+            echo "## Test Coverage" >> quality-report.md
+            echo "| Metric | Percentage |" >> quality-report.md
+            echo "|--------|------------|" >> quality-report.md
+            echo "| Lines | $(jq -r '.total.lines.pct' coverage/coverage-summary.json)% |" >> quality-report.md
+            echo "| Functions | $(jq -r '.total.functions.pct' coverage/coverage-summary.json)% |" >> quality-report.md
+            echo "| Branches | $(jq -r '.total.branches.pct' coverage/coverage-summary.json)% |" >> quality-report.md
+            echo "| Statements | $(jq -r '.total.statements.pct' coverage/coverage-summary.json)% |" >> quality-report.md
+            echo "" >> quality-report.md
+          fi
+          
+          # ESLint issues
+          if [ -f "eslint-report.json" ]; then
+            echo "## ESLint Issues" >> quality-report.md
+            ERROR_COUNT=$(jq '[.[].messages[] | select(.severity == 2)] | length' eslint-report.json)
+            WARNING_COUNT=$(jq '[.[].messages[] | select(.severity == 1)] | length' eslint-report.json)
+            echo "- Errors: $ERROR_COUNT" >> quality-report.md
+            echo "- Warnings: $WARNING_COUNT" >> quality-report.md
+            echo "" >> quality-report.md
+          fi
+          
+          cat quality-report.md
+      
+      - name: Upload code quality artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-quality-reports
+          path: |
+            quality-report.md
+            eslint-report.json
+            coverage/
+            complexity-report/
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Analyze bundle size
+        run: |
+          npx next-bundle-analyzer || echo "Bundle analysis completed"
+      
+      - name: Generate bundle report
+        run: |
+          echo "# Bundle Size Report" > bundle-report.md
+          echo "Generated: $(date)" >> bundle-report.md
+          echo "" >> bundle-report.md
+          
+          if [ -d ".next" ]; then
+            echo "## Build Output" >> bundle-report.md
+            echo "\`\`\`" >> bundle-report.md
+            find .next -name "*.js" -type f -exec ls -lh {} \; | head -20 >> bundle-report.md
+            echo "\`\`\`" >> bundle-report.md
+            echo "" >> bundle-report.md
+            
+            echo "## Total Bundle Size" >> bundle-report.md
+            TOTAL_SIZE=$(du -sh .next | cut -f1)
+            echo "Total .next directory size: $TOTAL_SIZE" >> bundle-report.md
+          fi
+          
+          cat bundle-report.md
+      
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-analysis
+          path: |
+            bundle-report.md
+            .next/analyze/
+
+  performance-audit:
+    name: Performance Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.12.x
+      
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+      
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun || echo "Lighthouse audit completed with warnings"
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+      
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [code-quality, bundle-analysis]
+    if: always()
+    
+    steps:
+      - name: Download quality reports
+        uses: actions/download-artifact@v4
+        with:
+          name: code-quality-reports
+      
+      - name: Evaluate quality metrics
+        id: quality-check
+        run: |
+          # Check coverage thresholds
+          if [ -f "coverage/coverage-summary.json" ]; then
+            COVERAGE=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
+            echo "Coverage: $COVERAGE%"
+            
+            if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+              echo "❌ Coverage below 80% threshold: $COVERAGE%"
+              echo "quality_passed=false" >> $GITHUB_OUTPUT
+            else
+              echo "✅ Coverage meets 80% threshold: $COVERAGE%"
+              echo "quality_passed=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ No coverage report found"
+            echo "quality_passed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check ESLint errors
+          if [ -f "eslint-report.json" ]; then
+            ERROR_COUNT=$(jq '[.[].messages[] | select(.severity == 2)] | length' eslint-report.json)
+            echo "ESLint errors: $ERROR_COUNT"
+            
+            if [ "$ERROR_COUNT" -gt 0 ]; then
+              echo "❌ ESLint errors found: $ERROR_COUNT"
+              echo "quality_passed=false" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No ESLint errors"
+            fi
+          fi
+      
+      - name: Quality gate result
+        run: |
+          if [ "${{ steps.quality-check.outputs.quality_passed }}" == "true" ]; then
+            echo "✅ Quality gate passed!"
+            exit 0
+          else
+            echo "❌ Quality gate failed!"
+            exit 1
+          fi
+      
+      - name: Comment on PR with quality results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 📊 Code Quality Report\n\n';
+            
+            // Add coverage info
+            try {
+              const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+              comment += `### Test Coverage\n`;
+              comment += `- **Lines**: ${coverage.total.lines.pct}%\n`;
+              comment += `- **Functions**: ${coverage.total.functions.pct}%\n`;
+              comment += `- **Branches**: ${coverage.total.branches.pct}%\n`;
+              comment += `- **Statements**: ${coverage.total.statements.pct}%\n\n`;
+            } catch (error) {
+              comment += '⚠️ No coverage data available\n\n';
+            }
+            
+            // Add ESLint info
+            try {
+              const eslint = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'));
+              const errors = eslint.reduce((sum, file) => 
+                sum + file.messages.filter(msg => msg.severity === 2).length, 0);
+              const warnings = eslint.reduce((sum, file) => 
+                sum + file.messages.filter(msg => msg.severity === 1).length, 0);
+              
+              comment += `### ESLint Results\n`;
+              comment += `- **Errors**: ${errors}\n`;
+              comment += `- **Warnings**: ${warnings}\n\n`;
+            } catch (error) {
+              comment += '⚠️ No ESLint data available\n\n';
+            }
+            
+            const qualityPassed = '${{ steps.quality-check.outputs.quality_passed }}' === 'true';
+            comment += qualityPassed ? '✅ Quality gate **PASSED**' : '❌ Quality gate **FAILED**';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  weekly-quality-report:
+    name: Weekly Quality Report
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    needs: [code-quality, bundle-analysis, performance-audit]
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Generate comprehensive report
+        run: |
+          echo "# Weekly Code Quality Report" > weekly-report.md
+          echo "Generated: $(date)" >> weekly-report.md
+          echo "" >> weekly-report.md
+          
+          # Include all individual reports
+          for report in quality-report.md bundle-report.md; do
+            if [ -f "$report" ]; then
+              echo "---" >> weekly-report.md
+              cat "$report" >> weekly-report.md
+              echo "" >> weekly-report.md
+            fi
+          done
+          
+          cat weekly-report.md
+      
+      - name: Create quality tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '';
+            
+            try {
+              body = fs.readFileSync('weekly-report.md', 'utf8');
+            } catch (error) {
+              body = 'Weekly quality report generation failed. Please check the workflow logs.';
+            }
+            
+            const title = `📊 Weekly Code Quality Report - ${new Date().toISOString().split('T')[0]}`;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['quality', 'report', 'weekly']
+            });
