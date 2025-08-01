@@ -83,7 +83,8 @@ export default function RoomPage({ roomCode }: RoomPageProps) {
     return (
       <>
         <Head>
-          <title>Room Not Found - Sticky Notes</title>
+          <title>Room Not Found - NoteSpace</title>
+          <meta name="robots" content="noindex, nofollow" />
         </Head>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
           <div className="text-center max-w-md">
@@ -110,7 +111,8 @@ export default function RoomPage({ roomCode }: RoomPageProps) {
     return (
       <>
         <Head>
-          <title>Room {roomCode} - Sticky Notes</title>
+          <title>Loading Workspace - NoteSpace</title>
+          <meta name="robots" content="noindex, nofollow" />
         </Head>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
           <div className="text-center">
@@ -126,7 +128,8 @@ export default function RoomPage({ roomCode }: RoomPageProps) {
     return (
       <>
         <Head>
-          <title>Error - Sticky Notes</title>
+          <title>Connection Error - NoteSpace</title>
+          <meta name="robots" content="noindex, nofollow" />
         </Head>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
           <div className="text-center max-w-md">
@@ -162,10 +165,25 @@ export default function RoomPage({ roomCode }: RoomPageProps) {
   return (
     <>
       <Head>
-        <title>Room {roomCode} - Sticky Notes</title>
-        <meta name="description" content={`Collaborative sticky notes room ${roomCode}`} />
+        <title>Workspace {roomCode} - NoteSpace Collaboration</title>
+        <meta name="description" content={`Join workspace ${roomCode} for real-time collaborative sticky notes. Brainstorm, plan, and organize ideas together with your team instantly.`} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="keywords" content={`workspace ${roomCode}, collaborative notes, team brainstorming, shared sticky notes, real-time collaboration`} />
+        
+        {/* Open Graph Meta Tags */}
+        <meta property="og:title" content={`Workspace ${roomCode} - NoteSpace`} />
+        <meta property="og:description" content="Join this collaborative workspace to share ideas and notes in real-time." />
+        <meta property="og:type" content="website" />
+        
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`Workspace ${roomCode} - NoteSpace`} />
+        <meta name="twitter:description" content="Join this collaborative workspace for real-time note sharing." />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="noindex, follow" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </Head>
       
       <StickyBoard

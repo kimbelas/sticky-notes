@@ -81,7 +81,7 @@ export default function CodeEntry({ onCodeSubmit }: CodeEntryProps) {
 
       if (data.valid) {
         // Save to localStorage
-        localStorage.setItem('stickyNotes_lastRoomCode', code.toUpperCase());
+        localStorage.setItem('noteSpace_lastRoomCode', code.toUpperCase());
         
         if (onCodeSubmit) {
           onCodeSubmit(code.toUpperCase());
@@ -129,7 +129,7 @@ export default function CodeEntry({ onCodeSubmit }: CodeEntryProps) {
             const validateData = await validateResponse.json();
             
             if (validateData.valid) {
-              localStorage.setItem('stickyNotes_lastRoomCode', data.code);
+              localStorage.setItem('noteSpace_lastRoomCode', data.code);
               router.push(`/room/${data.code}`);
             } else {
               setError('Failed to create room');

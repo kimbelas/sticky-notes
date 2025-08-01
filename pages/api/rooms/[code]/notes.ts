@@ -10,7 +10,7 @@ if (!MONGO_URI || !MONGO_URI.startsWith('mongodb')) {
 
 if (!mongoose.connections[0].readyState) {
   mongoose.connect(MONGO_URI, {
-    dbName: 'StickyNotes',
+    dbName: 'NoteSpace',
   });
 }
 

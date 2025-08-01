@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Next.js application with GraphQL API that manages sticky notes. It uses:
+This is a Next.js application with GraphQL API called NoteSpace that manages collaborative digital notes. It uses:
 
 ### Core Technologies
 - **Next.js 15** with App Router and Pages Router hybrid approach
@@ -43,7 +43,7 @@ This is a Next.js application with GraphQL API that manages sticky notes. It use
 
 **MongoDB Connection**:
 - Requires `MONGO_URI` environment variable in `.env.local`
-- Database name: 'StickyNotes'
+- Database name: 'NoteSpace'
 - Connection handled in GraphQL endpoint with connection reuse
 
 **File Structure Notes**:
