@@ -13,6 +13,8 @@ interface StickyBoardProps {
 
 export default function StickyBoard({ roomCode, notes, onNotesChange }: StickyBoardProps) {
   const [showAddButton, setShowAddButton] = useState(true);
+  const [noteZIndices, setNoteZIndices] = useState<Record<string, number>>({});
+  const [highestZIndex, setHighestZIndex] = useState(1);
   
   const boardRef = useRef<HTMLDivElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
@@ -20,6 +22,16 @@ export default function StickyBoard({ roomCode, notes, onNotesChange }: StickyBo
   const [addRoomNote] = useMutation(ADD_ROOM_NOTE);
   const [updateRoomNote] = useMutation(UPDATE_ROOM_NOTE);
   const [deleteRoomNote] = useMutation(DELETE_ROOM_NOTE);
+
+  // Bring a note to the front
+  const bringToFront = useCallback((noteId: string) => {
+    const newZIndex = highestZIndex + 1;
+    setHighestZIndex(newZIndex);
+    setNoteZIndices(prev => ({
+      ...prev,
+      [noteId]: newZIndex
+    }));
+  }, [highestZIndex]);
 
   // Generate a random position for new notes
   const getRandomPosition = useCallback(() => {
@@ -101,10 +113,16 @@ export default function StickyBoard({ roomCode, notes, onNotesChange }: StickyBo
   // Handle drag end callback (simplified since drag is handled in StickyNote)
   const handleDragStart = (note: Note, e: React.MouseEvent) => {
     setShowAddButton(false);
+    bringToFront(note.id);
   };
 
   const handleDragEnd = (note: Note) => {
     setShowAddButton(true);
+  };
+
+  // Handle note click to bring to front
+  const handleNoteClick = (note: Note) => {
+    bringToFront(note.id);
   };
 
   // Handle keyboard shortcuts
@@ -183,6 +201,8 @@ export default function StickyBoard({ roomCode, notes, onNotesChange }: StickyBo
           isDragging={false}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          onClick={handleNoteClick}
+          zIndex={noteZIndices[note.id] || 1}
         />
       ))}
 
