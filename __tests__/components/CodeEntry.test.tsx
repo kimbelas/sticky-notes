@@ -29,7 +29,7 @@ describe('CodeEntry Component', () => {
   it('renders correctly', () => {
     render(<CodeEntry />);
     
-    expect(screen.getByText('Sticky Notes')).toBeInTheDocument();
+    expect(screen.getByText('NoteSpace')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('ENTER CODE')).toBeInTheDocument();
     expect(screen.getByText('Join Room')).toBeInTheDocument();
     expect(screen.getByText('Create New Room')).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe('CodeEntry Component', () => {
     
     render(<CodeEntry />);
     
-    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('stickyNotes_lastRoomCode');
+    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('noteSpace_lastRoomCode');
     expect(screen.getByDisplayValue('ABC123')).toBeInTheDocument();
   });
 
@@ -79,7 +79,7 @@ describe('CodeEntry Component', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: 'ABC123', createIfNotExists: true }),
       });
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stickyNotes_lastRoomCode', 'ABC123');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('noteSpace_lastRoomCode', 'ABC123');
       expect(mockPush).toHaveBeenCalledWith('/room/ABC123');
     });
   });
