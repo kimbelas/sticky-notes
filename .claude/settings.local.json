@@ -5,7 +5,13 @@
       "Bash(npm run build:*)",
       "Bash(rm:*)",
       "Bash(npm install:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(npm run lint:*)",
+      "Bash(set ESLINT_USE_FLAT_CONFIG=false)",
+      "Bash(eslint:*)",
+      "Bash(npx cross-env:*)",
+      "Bash(del eslint.security.config.js)",
+      "Bash(npm run test:coverage:*)"
     ],
     "deny": []
   }

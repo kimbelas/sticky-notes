@@ -21,6 +21,8 @@ interface StickyNoteProps {
   isDragging?: boolean;
   onDragStart?: (note: Note, e: React.MouseEvent) => void;
   onDragEnd?: (note: Note) => void;
+  onClick?: (note: Note) => void;
+  zIndex?: number;
 }
 
 const colorClassMap: Record<string, string> = {
@@ -42,6 +44,8 @@ export default function StickyNote({
   isDragging = false,
   onDragStart,
   onDragEnd,
+  onClick,
+  zIndex = 1,
 }: StickyNoteProps) {
   const [editingTitle, setEditingTitle] = useState(note.title);
   const [editingContent, setEditingContent] = useState(note.content);
@@ -103,8 +107,18 @@ export default function StickyNote({
     e.preventDefault();
     setIsMouseDown(true);
     
+    // Bring note to front on click
+    if (onClick) {
+      onClick(note);
+    }
+    
     const startX = e.clientX - note.x;
     const startY = e.clientY - note.y;
+
+    // Trigger onDragStart callback
+    if (onDragStart) {
+      onDragStart(note, e);
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       const newX = Math.max(0, e.clientX - startX);
@@ -126,6 +140,11 @@ export default function StickyNote({
       const newX = Math.max(0, e.clientX - startX);
       const newY = Math.max(0, e.clientY - startY);
       onUpdate(note, { x: newX, y: newY });
+      
+      // Trigger onDragEnd callback
+      if (onDragEnd) {
+        onDragEnd(note);
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -175,7 +194,7 @@ export default function StickyNote({
         position: 'absolute',
         left: `${note.x}px`,
         top: `${note.y}px`,
-        zIndex: isDragging ? 1000 : 1,
+        zIndex: isDragging ? 9999 : zIndex,
       }}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
