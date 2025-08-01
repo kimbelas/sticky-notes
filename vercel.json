@@ -57,12 +57,6 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "builds": [
-    {
-      "src": "next.config.mjs",
-      "use": "@vercel/next"
-    }
-  ],
   "regions": ["iad1", "sfo1"],
   "cleanUrls": true,
   "trailingSlash": false
